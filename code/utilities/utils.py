@@ -10,6 +10,9 @@ from utilities.formrecognizer import analyze_read
 from utilities.azureblobstorage import upload_file, upsert_blob_metadata
 import tiktoken
 
+from azure.ai.textanalytics import TextAnalyticsClient
+from azure.core.credentials import AzureKeyCredential
+
 def initialize(engine='davinci'):
     openai.api_type = "azure"
     openai.api_base = os.getenv('OPENAI_API_BASE')
@@ -160,3 +163,32 @@ def convert_file_and_add_embeddings(fullpath, filename, enable_translation=False
     upsert_blob_metadata(filename, {"converted": "true"})
     for k, t in enumerate(text):
         add_embeddings(t, f"{filename}_chunk_{k}", os.getenv('OPENAI_EMBEDDINGS_ENGINE_DOC', 'text-embedding-ada-002'))
+
+
+# Authenticate the client using your key and endpoint 
+def authenticate_lang_client():
+    ta_credential = AzureKeyCredential(os.getenv('LANGUAGE_KEY'))
+    text_analytics_client = TextAnalyticsClient(
+            endpoint=os.getenv('LANGUAGE_ENDPOINT'), 
+            credential=ta_credential)
+    return text_analytics_client
+
+
+def key_phrase_extraction(documents):
+    client = authenticate_lang_client()
+
+    try:
+        response = client.extract_key_phrases(documents = documents)#[0]
+        key_phrases = []
+        for doc in response:
+            if not doc.is_error:
+                key_phrases.append(doc.key_phrases)
+            else:
+                print(doc.id, doc.error)
+        
+        return key_phrases
+
+    except Exception as err:
+        print("Encountered exception. {}".format(err))
+        return []
+        
