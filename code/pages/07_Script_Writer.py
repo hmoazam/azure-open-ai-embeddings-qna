@@ -94,8 +94,8 @@ try:
     if question != '':
         if question != st.session_state['question']:
             st.session_state['question'] = question
-            split_text = sent_tokenize(question)
-            key_phrases = utils.key_phrase_extraction(split_text)
+            # split_text = sent_tokenize(question)
+            key_phrases = utils.key_phrase_extraction([question])
             for elem in key_phrases:
                 # TODO: decide if want to concatenate the key phrases of the sentence and then get the embedding, or get one for each key phrase (current implementation). I think the first is better.
                 for phrase in elem:
